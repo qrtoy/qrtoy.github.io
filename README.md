@@ -1,32 +1,28 @@
 # qrtoy
 
-Apps stored in QR codes, *almost* completely offline.
+Apps storable in QR codes, *almost* completely offline.
 
-`index.html` loads a data URL stored in the URL fragment into an iframe. `s.js`, a service worker, allows this to work offline after the first visit. 
+Add a data URL after [`https://qrtoy.github.io#`](https://qrtoy.github.io#) like so [`https://qrtoy.github.io#data:text/html,<div>hello world</div>`](https://qrtoy.github.io#data:text/html,%3Cdiv%3Ehello%20world%3C/div%3E")
+
+On page load, that fragment (everything after `#`) is loaded into an iframe. URL fragments normally scroll to a specific part of a page, but we use it to store the entire app. Most importantly, [fragments are never sent to the server](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Fragment) so your app is private.
+
+After you visit any `qrtoy.github.io` URL, you should be able to visit any other `qrtoy.github.io` URL without internet.
 
 ## Why almost offline?
 
 QR codes can store a lot of data, but making it easily runnable limits us to URLs. The obvious solution would be storing a website inside a data URL like `data:text/html,<div>hello world</div>`, but due to security issues, [all modern browsers have blocked top-level navigation to data URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data#security_issues).
 
-There are alternatives to URLs. URIs starting with `tel:`, `mailto:`, `spotify:` etc. open in their respective apps, but nothing is as programmable and as ubiquitous as a web browser. 
+There are alternatives to URLs. URIs starting with `tel:`, `mailto:`, `spotify:` etc. open in their respective apps, but none of these are as programmable or as ubiquitous as a web browser. 
 
-Without data URLs or an existing installed app, we're left with regular URLs that require internet to load. However, we can use service workers to cache the website and serve all subsequent visits completely offline until the cache expires. This happens after 7 days without use in Safari; otherwise only when the cache is full or manually cleared.
+Without data URLs or a preinstalled app, we're left with regular URLs that require internet to load. However, we can use service workers to cache the website and serve all subsequent visits completely offline. This works until the browser cache runs out of space, is manually cleared, or after 7 days without use in Safari.
 
-## URL format
+`index.html` is the minimal ~400 bytes needed to bootstrap an app from a data URL. After the first load, `s.js` caches `index.html` for offline use in ~200 bytes. It doesn't need to be that small; I just thought it was fun.
 
-The fragment or hash of a URL is everything that comes after `#`. Normally it scrolls to a specific part of a page, but nothing happens if there is no match. It's never sent to the server which makes it nice for storing arbitrary data.
+## Why a data URL?
 
-Here we just set the data URL as the fragment.
+Since the app already depends on the qrtoy website to run, it doesn't technically have to be self-contained like a data URL. An argument could be made for using a basic demo framework e.g. [js1024](https://js1024.fun/), [p5.js](https://p5js.org/), [shadertoy](https://www.shadertoy.com/), [dwitter](https://www.dwitter.net), etc and only storing compressed code or arguments in the URL.
 
-`data:text/html,<div>hello world</div>` -> [`https://zhengkyl.github.io/qrtoy#data:text/html,<div>hello world</div>`](https://zhengkyl.github.io/qrtoy#data:text/html,%3Cdiv%3Ehello%20world%3C/div%3E")
-
-On page load, the fragment is set as an iframe's src.
-
-## Design decisions
-
-Since the URL depends on the website to be run, it doesn't have to be self-contained like a data URL. An argument could be made for using a basic demo framework e.g. [js1024](https://js1024.fun/), [p5.js](https://p5js.org/), [shadertoy](https://www.shadertoy.com/), [dwitter](https://www.dwitter.net), etc and only storing compressed code in the URL.
-
-Ultimately, I chose to stick to data URLs instead of a custom format to keep apps easily reusable/shareable without relying on this website.
+Ultimately, I think creating a custom format/encoder/decoder makes this a different project, and I like that data URLs are usable without this website.
 
 ## Related projects
 
