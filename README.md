@@ -1,6 +1,6 @@
 # qrtoy
 
-Apps storable in QR codes, *almost* completely offline.
+Apps storable in QR codes, _almost_ completely offline.
 
 Add a data URL after [`https://qrtoy.github.io#`](https://qrtoy.github.io#) like so [`https://qrtoy.github.io#data:text/html,<div>hello world</div>`](https://qrtoy.github.io#data:text/html,%3Cdiv%3Ehello%20world%3C/div%3E")
 
@@ -12,7 +12,7 @@ After you visit any `qrtoy.github.io` URL, you should be able to visit any other
 
 QR codes can store a lot of data, but making it easily runnable limits us to URLs. The obvious solution would be storing a website inside a data URL like `data:text/html,<div>hello world</div>`, but due to security issues, [all modern browsers have blocked top-level navigation to data URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data#security_issues).
 
-There are alternatives to URLs. URIs starting with `tel:`, `mailto:`, `spotify:` etc. open in their respective apps, but none of these are as programmable or as ubiquitous as a web browser. 
+There are alternatives to URLs. URIs starting with `tel:`, `mailto:`, `spotify:` etc. open in their respective apps, but none of these are as programmable or as ubiquitous as a web browser.
 
 Without data URLs or a preinstalled app, we're left with regular URLs that require internet to load. However, we can use service workers to cache the website and serve all subsequent visits completely offline. This works until the browser cache runs out of space, is manually cleared, or after 7 days without use in Safari.
 
@@ -26,11 +26,18 @@ Ultimately, I think creating a custom format/encoder/decoder makes this a differ
 
 ## Related projects
 
+https://github.com/arfct/itty-bitty
+
+- Sites stored (compressed) inside URL fragments
+
 https://github.com/Kuberwastaken/backdooms
-  - Doom as data URL inside QR code
+
+- Doom as data URL inside QR code
 
 https://mattkc.com/etc/snakeqr
-  - Snake windows executable inside QR code
+
+- Snake windows executable inside QR code
 
 https://github.com/thisaislan/qrgame
-  - Custom game format inside QR code loadable with app 
+
+- Custom game format inside QR code loadable with app

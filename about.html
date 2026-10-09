@@ -1,44 +1,31 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>About qrtoy</title>
-    <style>
-      body {
-        max-width: 40em;
-        margin: 2em auto;
-        padding: 0 1em;
-        line-height: 1.5;
-        font-family: sans-serif;
-      }
-      code {
-        overflow-wrap: anywhere;
-      }
-    </style>
   </head>
   <body>
     <h1>qrtoy</h1>
     <p>Apps stored in QR codes, <i>almost</i> completely offline.</p>
-
     <h2>How it works</h2>
     <p>
-      Put a data URL after the <code>#</code> and it gets loaded into a sandboxed iframe. The fragment is never sent to a server, so the whole app lives in the link itself.
+      Put a data URL after the <code>#</code> and it gets loaded into a sandboxed iframe. The
+      fragment is never sent to a server, so the whole app lives in the link itself.
     </p>
     <p>
-      <a href="/#data:text/html,<div>hello world</div>"><code>https://zhengkyl.github.io/qrtoy#data:text/html,&lt;div&gt;hello world&lt;/div&gt;</code></a>
+      <a href="/#data:text/html,<div>hello world</div>"
+        ><code>https://qrtoy.github.io#data:text/html,&lt;div&gt;hello world&lt;/div&gt;</code></a
+      >
     </p>
     <h3>Why almost offline?</h3>
     <p>
-      Browsers block top-level navigation to data URLs, so a QR code can't open one directly. It needs a real URL to bootstrap from, which requires internet the first time. After that a service worker serves from the cache. Once you've visited one qrtoy, you can visit any other without internet until the cache expires (7 days unused in Safari) or is cleared.
+      Browsers block top-level navigation to data URLs, so a QR code can't open one directly. It
+      needs a real URL to bootstrap from, which requires internet the first time. After that a
+      service worker serves from the cache. Once you've visited one qrtoy, you can visit any other
+      without internet until the cache expires (7 days unused in Safari) or is cleared.
     </p>
-    <p><a href="https://github.com/zhengkyl/qrtoy">Check out the source code</a>. The raw <code>index.html</code> and <code>s.js</code> are under &lt;600 bytes combined.</p>
-
-
-    
-
-    <script>
-      navigator.serviceWorker.register("s.js")
-    </script>
+    <p><a href="https://github.com/qrtoy/qrtoy.github.io">Check out the source code</a>.</p>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
