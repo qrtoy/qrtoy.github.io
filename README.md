@@ -16,7 +16,7 @@ There are alternatives to URLs. URIs starting with `tel:`, `mailto:`, `spotify:`
 
 Without data URLs or a preinstalled app, we're left with regular URLs that require internet to load. However, we can use service workers to cache the website and serve all subsequent visits completely offline. This works until the browser cache runs out of space, is manually cleared, or after 7 days without use in Safari.
 
-`index.html` is the minimal ~400 bytes needed to bootstrap an app from a data URL. After the first load, `s.js` caches `index.html` for offline use in ~200 bytes. It doesn't need to be that small; I just thought it was fun.
+`index.html` is the minimal ~600 bytes needed to bootstrap an app from a data URL. After the first load, `s.js` caches `index.html` for offline use in ~200 bytes. It doesn't need to be that small; I just thought it was fun.
 
 ## Why a data URL?
 

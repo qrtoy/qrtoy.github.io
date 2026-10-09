@@ -10,6 +10,7 @@
     "fmt": "oxfmt"
   },
   "devDependencies": {
+    "@types/node": "^24.19.1",
     "oxfmt": "^0.72.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"

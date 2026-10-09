@@ -1,0 +1,27 @@
+:root {
+  --bg: #fff;
+  --fg: #111;
+  --muted: #666;
+  --line: #d4d4d4;
+  --field: #fafafa;
+  --accent: #0a58ca;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, sans-serif;
+}
+a {
+  color: var(--accent);
+}
+code {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
