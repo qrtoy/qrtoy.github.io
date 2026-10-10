@@ -1,4 +1,4 @@
-<!doctype html><meta name=viewport content="width=device-width,initial-scale=1"><link rel=icon href=favicon.svg><style>*{margin:0;height:100%}iframe{border:0;display:block;width:100%}</style><noscript>qrtoy requires javascript. <a href=about>learn more</a></noscript><iframe id=f sandbox="allow-scripts allow-top-navigation-by-user-activation"></iframe><script>
+<!doctype html><title>qrtoy - tiny apps inside qr codes</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=icon href=favicon.svg><style>*{margin:0;height:100%}iframe{border:0;display:block;width:100%}</style><iframe id=f sandbox="allow-scripts allow-top-navigation-by-user-activation"></iframe><noscript>qrtoy requires javascript. <a href=about>learn more</a></noscript><script>
 H=_=>location.hash.slice(1)
 L=(h=H())=>h?(f.contentWindow.location.replace(h),fetch(/^data:text\/html[;,]/i.test(h)?h:"data:,").then(r=>r.text()).then(s=>new DOMParser().parseFromString(s,"text/html").title||"untitled",_=>"broken").then(t=>h==H()&&(document.title=t+" - qrtoy"))):location.replace("about")
 L()
