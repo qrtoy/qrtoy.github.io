@@ -1,4 +1,4 @@
-V="3"
+V="4"
 skipWaiting()
 oninstall=e=>e.waitUntil(caches.open(V).then(c=>c.add(new Request("/",{cache:"no-cache"}))))
 onactivate=e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.map(n=>n!=V&&caches.delete(n)))))
