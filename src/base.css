@@ -62,7 +62,7 @@ button,
 }
 .url {
   font: 12px/1.4 var(--mono);
-  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 .qr {
   aspect-ratio: 1;
