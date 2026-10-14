@@ -1,0 +1,150 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Pong</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    background: #000;
+    display: grid;
+    place-items: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    width: min(100vw, 75vh);
+  }
+</style>
+<canvas id="c" width="300" height="400"></canvas>
+<script>
+  // Player paddle is at the bottom (y 377..383), CPU paddle at the top (y 17..23).
+  // Paddles are 60 wide x 6 tall, ball is 8x8. All positions are CENTERS.
+  let ctx = c.getContext("2d"),
+    w = 300,
+    h = 400,
+    pr = 30,
+    ph = 6,
+    br = 8,
+    playerX = w / 2, // player paddle center x
+    cpuX = w / 2, // cpu paddle center x
+    keyDir = 0, // -1 left, 0 none, 1 right (keyboard input)
+    score = [0, 0], // [player, cpu]
+    lastTime, // timestamp of previous frame (undefined on first frame)
+    ball;
+
+  // Reset ball to center. dir = 1 serves downward (toward player), -1 upward (toward cpu).
+  // vx is random in [-2, 2), vy is 3 px/frame.
+  function serve(dir) {
+    ball = { x: w / 2, y: h / 2, vx: Math.random() * 4 - 2, vy: 3 * dir };
+  }
+  serve(1);
+
+  // Mouse/touch: paddle follows pointer. Convert from CSS pixels to canvas pixels.
+  onpointerdown = onpointermove = (e) => {
+    audio.resume();
+    let rect = c.getBoundingClientRect();
+    playerX = ((e.clientX - rect.left) * w) / rect.width;
+  };
+  // Arrow keys set direction; any other key leaves it unchanged (`|| keyDir`).
+  onkeydown = (e) => (audio.resume(), (keyDir = { ArrowLeft: -1, ArrowRight: 1 }[e.key] || keyDir));
+  onkeyup = () => (keyDir = 0);
+
+  // Square-wave beeps like the arcade original. Browsers keep an AudioContext
+  // suspended until a user gesture, so the input handlers call audio.resume().
+  let audio = new AudioContext();
+  // `delay` (ms) schedules the beep for later, for playing short melodies.
+  function beep(freq, ms, delay = 0) {
+    let osc = new OscillatorNode(audio, { type: "square", frequency: freq }),
+      t = audio.currentTime + delay / 1000;
+    osc.connect(new GainNode(audio, { gain: 0.1 })).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + ms / 1000);
+  }
+
+  function clamp(x, a, b) {
+    return Math.max(a, Math.min(b, x));
+  }
+
+  function frame(time) {
+    // dt = elapsed time in units of "60fps frames", capped at 3 so a tab switch
+    // doesn't teleport the ball. On the very first frame lastTime is undefined -> dt = 0.
+    let dt = Math.min((time - (lastTime || time)) / 16.7, 3),
+      prevY = ball.y,
+      // Paddle hit test: did the ball cross horizontal line `lineY` this frame
+      // (prevY and new y are on opposite sides, or touching), and is it
+      // horizontally within 36 of paddle center `paddleX`
+      // (30 half-paddle + 4 half-ball + 2 slack)?
+      // Note: reads ball.y lazily, so it sees the *updated* position below.
+      hits = (lineY, paddleX) =>
+        (prevY - lineY) * (ball.y - lineY) <= 0 && Math.abs(ball.x - paddleX) < 36;
+    lastTime = time;
+
+    // Player: keyboard nudges 6px/frame; clamp so paddle stays on screen.
+    playerX = clamp(playerX + keyDir * 6 * dt, pr, w - pr);
+    // CPU: move toward ball x, max 2.8px/frame (slower than the ball can get -> beatable).
+    cpuX = clamp(cpuX + clamp(ball.x - cpuX, -3 * dt, 3 * dt), pr, w - pr);
+
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+
+    // Side walls (ball half-width 4): reflect and clamp back inside.
+    if (ball.x < br || ball.x > w - br) {
+      ball.vx *= -1;
+      ball.x = ball.x < br ? br : w - br;
+      beep(110, 16);
+    }
+
+    // Paddle collisions. Lines are paddle face +/- ball half-size:
+    //   player face y=377 -> ball center 373; cpu face y=23 -> ball center 27.
+    // Only check the paddle the ball is moving toward.
+    if ((ball.vy > 0 && hits(h - 20 - br, playerX)) || (ball.vy < 0 && hits(20 + br, cpuX))) {
+      // Reverse vertical direction and speed up 6%, capped at 9px/frame.
+      ball.vy = clamp(ball.vy * -1.06, -9, 9);
+      // Horizontal speed depends on where it hit the paddle (edges = steeper angle).
+      // vy was already flipped, so vy < 0 means it just bounced off the player.
+      ball.vx = (ball.x - (ball.vy < 0 ? playerX : cpuX)) / 6;
+      // beep(ball.vy < 0 ? 220: 330, 96)
+      beep(220, 40);
+    }
+
+    // Scoring: ball passed off the bottom -> cpu scores, serve toward cpu.
+    if (ball.y > h + 20) {
+      score[1]++;
+      serve(-1);
+      // Defeated: falling A minor arpeggio (E4 C4 A3), mirror of the victory one.
+      [330, 262, 220].forEach((f, i) => beep(f, i > 1 ? 240 : 80, i * 80));
+    }
+    // Ball passed off the top -> player scores, serve toward player.
+    if (ball.y < -20) {
+      score[0]++;
+      serve(1);
+      // Victorious: rising A major arpeggio (C#4 E4 A4), same key as the 220Hz hit sound.
+      [277, 330, 440].forEach((f, i) => beep(f, i > 1 ? 240 : 80, i * 80));
+    }
+
+    // Draw: background, center line, scores (cpu top half, player bottom half),
+    // then paddles and ball (fillRect takes top-left, so subtract half sizes).
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.setLineDash([8]);
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h);
+    ctx.stroke();
+    ctx.fillStyle = "dimgray";
+    ctx.font = "50px monospace";
+    ctx.fillText(score[1], 16, h / 2 - 15);
+    ctx.fillText(score[0], 16, h / 2 + 45);
+    ctx.fillStyle = "white";
+    ctx.fillRect(playerX - pr, 377, 2 * pr, 6);
+    ctx.fillRect(cpuX - pr, 17, 2 * pr, 6);
+    ctx.fillRect(ball.x - br, ball.y - br, 2 * br, 2 * br);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>

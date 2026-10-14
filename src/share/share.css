@@ -1,0 +1,33 @@
+@import "../base.css";
+
+main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+#back {
+  font-size: 14px;
+}
+h1 {
+  align-self: stretch;
+  text-align: center;
+  margin: 0;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.qr {
+  margin-inline: -2%;
+}
+#copy {
+  min-height: 48px;
+  font-weight: 500;
+}

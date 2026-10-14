@@ -1,0 +1,52 @@
+@import "../base.css";
+
+body {
+  max-width: 40em;
+  margin: 2em auto;
+  padding: 0 1em;
+  line-height: 1.5;
+}
+.examples {
+  display: grid;
+  gap: 1.5em;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 40em) {
+  .examples {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.examples .head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0 1em;
+}
+.qr {
+  margin-top: 0.5em;
+  margin-inline: -2%; /* remove quietzone to align with text */
+}
+.qr canvas {
+  cursor: zoom-in;
+}
+.viewer {
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.viewer::backdrop {
+  background: rgb(0 0 0 / 0.85);
+}
+.viewer canvas {
+  display: block;
+  width: min(90vw, 90vh);
+  image-rendering: pixelated;
+  cursor: zoom-out;
+}
+body:has(.viewer[open]) {
+  overflow: hidden;
+}

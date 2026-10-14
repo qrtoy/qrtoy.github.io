@@ -9,6 +9,9 @@
     "preview": "vite preview",
     "fmt": "oxfmt"
   },
+  "dependencies": {
+    "@minify-html/wasm": "^0.18.1"
+  },
   "devDependencies": {
     "@types/node": "^24.19.1",
     "oxfmt": "^0.72.0",

@@ -1,8 +1,0 @@
-@import "./base.css";
-
-body {
-  max-width: 40em;
-  margin: 2em auto;
-  padding: 0 1em;
-  line-height: 1.5;
-}

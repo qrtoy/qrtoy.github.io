@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>edit - qrtoy</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>qrtoy editor</h1>
+        <span class="muted">remove <code>/edit</code> from the URL to run the app</span>
+        <a href="about">About</a>
+      </header>
+      <div class="panel" id="src-panel">
+        <div class="bar">
+          <label for="src">Source</label>
+          <span class="muted" id="sizes"></span>
+        </div>
+        <textarea
+          id="src"
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+        ></textarea>
+      </div>
+      <div class="panel" id="preview-panel">
+        <div class="bar">
+          <span class="seg" id="view">
+            <label><input type="radio" name="view" checked />Preview</label>
+            <label><input type="radio" name="view" />Minified</label>
+          </span>
+          <span class="muted" id="readonly" hidden>read-only</span>
+        </div>
+        <iframe id="preview" title="Preview" sandbox="allow-scripts"></iframe>
+        <pre id="out" aria-label="Minified HTML" hidden></pre>
+      </div>
+      <section id="share">
+        <div id="qr" class="qr"></div>
+        <div id="details">
+          <a id="link" class="url" target="_blank"></a>
+          <div id="info"></div>
+          <div><button id="copy">Copy link</button></div>
+          <fieldset class="opts" id="minify"><legend>Minify</legend></fieldset>
+          <fieldset class="opts" id="steps"><legend>Encoding</legend></fieldset>
+          <div class="panel">
+            <label for="state">
+              App state: the data URL's own <code>#fragment</code>, passed to the app
+            </label>
+            <input
+              id="state"
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="off"
+              autocorrect="off"
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/edit/edit.ts"></script>
+  </body>
+</html>

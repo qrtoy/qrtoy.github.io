@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>qrtoy - tiny apps inside qr codes</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <h1>qrtoy</h1>
+    <p>apps stored in QR codes, <i>almost</i> completely offline</p>
+    <h2>Try it out</h2>
+    <ul class="examples">
+      <!-- examples -->
+    </ul>
+    <h2>How it works</h2>
+    <p>Put a data URL after the <code>#</code> and it gets loaded into an iframe.</p>
+    <p>
+      <a href="/#data:text/html,<div>hello world</div>"
+        ><code>https://qrtoy.github.io#data:text/html,&lt;div&gt;hello world&lt;/div&gt;</code></a
+      >
+    </p>
+    <h3>Why almost offline?</h3>
+    <p>
+      QR codes can't open data URLs directly. <code>qrcode.github.io</code> is a tiny website that
+      loads data URLs and stays cached for offline use. Once you've visited one qrtoy, you can visit
+      any other without internet until the cache expires. Expiring is uncommon, unless you manually
+      clear it or use Safari.
+    </p>
+    <p><a href="https://github.com/qrtoy/qrtoy.github.io">Check out the source code</a>.</p>
+    <dialog class="viewer"><canvas></canvas></dialog>
+    <script type="module" src="/src/about/about.ts"></script>
+  </body>
+</html>

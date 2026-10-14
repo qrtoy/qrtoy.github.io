@@ -1,0 +1,77 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Notes</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+  }
+  body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font:
+      16px system-ui,
+      sans-serif;
+  }
+  div {
+    padding: 4px 12px;
+    color: #777;
+    font-size: 12px;
+    border-bottom: 1px solid #ccc;
+  }
+  textarea {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    padding: 12px;
+    font: inherit;
+    resize: none;
+  }
+</style>
+<div id="s"></div>
+<textarea id="t" placeholder="Write something..." autofocus></textarea>
+<script>
+  let B = "https://qrtoy.github.io#",
+    p = 0,
+    z = 0,
+    st = (_) =>
+      (s.textContent =
+        (p ? "unsaved" : "saved") +
+        " - " +
+        ((top != self && B.length) + location.href.length) +
+        "/2953 bytes");
+
+  function load() {
+    let h = location.hash.slice(1);
+    try {
+      h = decodeURIComponent(h);
+    } catch {}
+    t.value = h;
+    p = 0;
+    st();
+  }
+
+  function save() {
+    z = 0;
+    history.replaceState(0, "", "#" + t.value.replace(/[%\s]/g, encodeURIComponent));
+    try {
+      top != self && top.location.replace(B + location.href);
+      p = 0;
+    } catch {}
+    st();
+  }
+
+  t.oninput = (_) => {
+    p = 1;
+    st();
+    clearTimeout(z);
+    z = setTimeout(save, 300);
+  };
+  onkeydown = onpointerdown = (_) => {
+    p && !z && save();
+  };
+  onhashchange = load;
+  load();
+  t.focus();
+</script>
