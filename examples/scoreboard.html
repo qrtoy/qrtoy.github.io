@@ -1,0 +1,125 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Scoreboard</title>
+<style>
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    margin: 0;
+    padding: 12px;
+    font:
+      20px system-ui,
+      sans-serif;
+    display: grid;
+    gap: 10px;
+  }
+  div,
+  p {
+    margin: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  input {
+    flex: 1;
+    width: 0;
+    font: inherit;
+    padding: 8px;
+    border: 0;
+    border-bottom: 1px solid #8888;
+    background: none;
+  }
+  b {
+    min-width: 2.5em;
+    text-align: center;
+    font-size: 32px;
+  }
+  button {
+    font: inherit;
+    min-width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 24px;
+    background: #8883;
+  }
+  p button {
+    flex: 1;
+  }
+</style>
+<main id="l"></main>
+<p><button id="add">add player</button><button id="zero">reset scores</button></p>
+<script>
+  // Players and scores live in the URL, like the notes app, as "Ann=3&Bo=-1", so the
+  // scoreboard survives a reload and the link can be passed to the next scorekeeper.
+  let players;
+
+  // Also updates the qrtoy URL, which needs a recent tap and fails silently without one.
+  function save() {
+    history.replaceState(0, "", "#" + new URLSearchParams(players));
+    try {
+      top != self && top.location.replace("https://qrtoy.github.io#" + location.href);
+    } catch {}
+  }
+
+  function load() {
+    players = [...new URLSearchParams(location.hash.slice(1))];
+    if (!players.length)
+      players = [
+        ["Player 1", 0],
+        ["Player 2", 0],
+      ];
+    render();
+  }
+
+  function button(text, onclick) {
+    let b = document.createElement("button");
+    b.textContent = text;
+    b.onclick = onclick;
+    return b;
+  }
+
+  function render() {
+    l.replaceChildren(
+      ...players.map((p, i) => {
+        let row = document.createElement("div"),
+          name = document.createElement("input"),
+          score = document.createElement("b"),
+          change = (n) => () => {
+            score.textContent = p[1] = +p[1] + n;
+            save();
+          };
+        name.value = p[0];
+        name.oninput = () => (p[0] = name.value);
+        name.onchange = save;
+        score.textContent = p[1];
+        row.append(
+          name,
+          button("−", change(-1)),
+          score,
+          button("+", change(1)),
+          button("×", () => {
+            players.splice(i, 1);
+            save();
+            render();
+          }),
+        );
+        return row;
+      }),
+    );
+  }
+
+  add.onclick = () => {
+    players.push(["Player " + (players.length + 1), 0]);
+    save();
+    render();
+    l.lastChild.firstChild.select();
+  };
+  zero.onclick = () => {
+    players.forEach((p) => (p[1] = 0));
+    save();
+    render();
+  };
+  onhashchange = load;
+  load();
+</script>

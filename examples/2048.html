@@ -1,0 +1,128 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>2048</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    background: #faf8ef;
+    color: #776e65;
+    font:
+      bold 24px system-ui,
+      sans-serif;
+    display: grid;
+    place-content: center;
+    gap: 12px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  p {
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+  }
+  button {
+    font: inherit;
+    font-size: 16px;
+    border: 0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    background: #8f7a66;
+    color: #fff;
+  }
+  #g {
+    width: min(92vw, 70vh);
+    aspect-ratio: 1;
+    display: grid;
+    grid: repeat(4, 1fr) / repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px;
+    box-sizing: border-box;
+    background: #bbada0;
+    border-radius: 8px;
+  }
+  #g div {
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    font-size: min(8vw, 6vh);
+  }
+</style>
+<p><span id="s"></span><button onclick="reset()">new</button></p>
+<div id="g"></div>
+<script>
+  // The board is 16 numbers, row by row, with 0 for an empty cell.
+  let board, score, sx, sy;
+  for (let i = 0; i < 16; i++) g.append(document.createElement("div"));
+
+  function add() {
+    let empty = [...board.keys()].filter((i) => !board[i]);
+    board[empty[(Math.random() * empty.length) | 0]] = Math.random() < 0.9 ? 2 : 4;
+  }
+
+  function reset() {
+    board = Array(16).fill(0);
+    score = 0;
+    add();
+    add();
+    draw();
+  }
+
+  // d: 0 left, 1 right, 2 up, 3 down. Each row or column is read as a line of indices
+  // starting from the edge the tiles slide toward.
+  function move(d) {
+    let moved = 0;
+    for (let i = 0; i < 4; i++) {
+      let line = [0, 1, 2, 3].map((j) =>
+          d > 1 ? (d > 2 ? 3 - j : j) * 4 + i : i * 4 + (d ? 3 - j : j),
+        ),
+        tiles = line.map((k) => board[k]).filter((v) => v),
+        out = [];
+      while (tiles.length) {
+        let v = tiles.shift();
+        // Equal neighbors merge once per move: [2, 2, 2] becomes [4, 2], not [6].
+        if (v == tiles[0]) ((score += v *= 2), tiles.shift());
+        out.push(v);
+      }
+      line.forEach((k, j) => {
+        moved |= board[k] != (out[j] || 0);
+        board[k] = out[j] || 0;
+      });
+    }
+    if (moved) (add(), draw());
+  }
+
+  // Game over when the board is full and no tile has an equal neighbor to its right or below.
+  function draw() {
+    let over =
+      !board.includes(0) &&
+      !board.some((v, i) => (i % 4 < 3 && v == board[i + 1]) || v == board[i + 4]);
+    s.textContent = score + (over ? " - game over" : "");
+    board.forEach((v, i) => {
+      let el = g.children[i],
+        n = Math.log2(v);
+      el.textContent = v || "";
+      // Tiles get warmer and darker as they double: 2 is pale yellow, 2048 is deep red.
+      el.style.background = v ? `hsl(${50 - n * 5},${40 + n * 5}%,${92 - n * 5}%)` : "#cdc1b4";
+      el.style.color = n > 2 ? "#fff" : "";
+    });
+  }
+
+  onkeydown = (e) => {
+    let d = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].indexOf(e.key);
+    d < 0 || (e.preventDefault(), move(d));
+  };
+  onpointerdown = (e) => {
+    sx = e.clientX;
+    sy = e.clientY;
+  };
+  onpointerup = (e) => {
+    let dx = e.clientX - sx,
+      dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) > 30)
+      move(Math.abs(dx) > Math.abs(dy) ? +(dx > 0) : dy < 0 ? 2 : 3);
+  };
+  reset();
+</script>

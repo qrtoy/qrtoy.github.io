@@ -1,0 +1,118 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Life</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    flex: 1;
+    min-height: 0;
+    image-rendering: pixelated;
+  }
+  p {
+    margin: 0;
+    display: flex;
+  }
+  button {
+    flex: 1;
+    font:
+      18px system-ui,
+      sans-serif;
+    padding: 12px 0;
+    border: 0;
+    background: #222;
+    color: #ccc;
+  }
+</style>
+<canvas id="c"></canvas>
+<p>
+  <button id="p">pause</button>
+  <button onclick="step()">step</button>
+  <button onclick="fill(0.25)">random</button>
+  <button onclick="fill(0)">clear</button>
+</p>
+<script>
+  // Conway's Game of Life on a wrapping grid with one canvas pixel per cell, scaled up by CSS.
+  // Dead cells keep a fading trail of where life has been.
+  let ctx = c.getContext("2d"),
+    W,
+    H,
+    img,
+    cells,
+    trail,
+    running = 1,
+    paint, // what dragging sets cells to, undefined when not drawing
+    last = 0;
+
+  function fill(chance) {
+    cells = Uint8Array.from(trail, () => Math.random() < chance);
+  }
+
+  function step() {
+    let next = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        let n = -cells[y * W + x];
+        for (let dy = -1; dy < 2; dy++)
+          for (let dx = -1; dx < 2; dx++) n += cells[((y + dy + H) % H) * W + ((x + dx + W) % W)];
+        next[y * W + x] = n == 3 || (n == 2 && cells[y * W + x]);
+      }
+    cells = next;
+  }
+
+  function frame(t) {
+    if (running && t - last > 80) (step(), (last = t));
+    p.textContent = running ? "pause" : "play";
+    cells.forEach((alive, i) => {
+      let a = (trail[i] = alive ? 1 : trail[i] * 0.93);
+      img.data[i * 4] = alive * 255;
+      img.data[i * 4 + 1] = alive ? 255 : a * 160;
+      img.data[i * 4 + 2] = alive ? 160 : a * 255;
+    });
+    ctx.putImageData(img, 0, 0);
+    requestAnimationFrame(frame);
+  }
+
+  // Drawing: the first cell touched decides whether the stroke adds or erases cells.
+  function cell(e) {
+    let r = c.getBoundingClientRect();
+    return (
+      ((((e.clientY - r.top) * H) / r.height) | 0) * W +
+      ((((e.clientX - r.left) * W) / r.width) | 0)
+    );
+  }
+  c.onpointerdown = (e) => {
+    c.setPointerCapture(e.pointerId);
+    paint = +!cells[cell(e)];
+    c.onpointermove(e);
+  };
+  c.onpointermove = (e) => paint == undefined || (cells[cell(e)] = paint);
+  c.onpointerup = () => (paint = undefined);
+
+  // Set here rather than in an onclick attribute: the minifier inlines variables it
+  // never sees reassigned, and it doesn't look inside attributes.
+  p.onclick = () => (running = !running);
+
+  // The grid is sized to fit the screen at 8px per cell. qrtoy can run this before the page
+  // around it is laid out, while the canvas is still 0x0, so wait for a real size.
+  function start() {
+    if (!c.clientWidth) return requestAnimationFrame(start);
+    W = c.width = Math.ceil(c.clientWidth / 8);
+    H = c.height = Math.ceil(c.clientHeight / 8);
+    img = ctx.createImageData(W, H);
+    img.data.fill(255); // opaque; frame() only writes red, green and blue
+    trail = new Float32Array(W * H);
+    fill(0.25);
+    requestAnimationFrame(frame);
+  }
+  start();
+</script>

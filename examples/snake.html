@@ -1,0 +1,135 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Snake</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    background: #111;
+    color: #ccc;
+    font: 24px monospace;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 8px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    width: min(94vw, 80vh);
+    background: #222;
+    image-rendering: pixelated;
+  }
+</style>
+<div id="s">swipe or arrow keys</div>
+<canvas id="c" width="20" height="20"></canvas>
+<script>
+  // The board is a 20x20 canvas scaled up by CSS, so one canvas pixel is one cell.
+  // Positions are [x, y] pairs; the snake's head is snake[0].
+  let ctx = c.getContext("2d"),
+    N = 20,
+    snake = [],
+    dir,
+    queue, // turns waiting for the next tick, so fast double taps aren't lost
+    food = [],
+    score,
+    dead = 1,
+    sx, // swipe start, undefined when no pointer is down
+    sy,
+    audio = new AudioContext();
+
+  function beep(freq, ms) {
+    let osc = new OscillatorNode(audio, { type: "square", frequency: freq });
+    osc.connect(new GainNode(audio, { gain: 0.1 })).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + ms / 1000);
+  }
+
+  let same = (a, b) => a[0] == b[0] && a[1] == b[1];
+
+  function place() {
+    do food = [(Math.random() * N) | 0, (Math.random() * N) | 0];
+    while (snake.some((p) => same(p, food)));
+  }
+
+  function reset() {
+    snake = [
+      [6, 10],
+      [5, 10],
+      [4, 10],
+    ];
+    dir = [1, 0];
+    queue = [];
+    dead = score = 0;
+    s.textContent = 0;
+    place();
+    tick();
+  }
+
+  function turn(d) {
+    dead ? reset() : queue.length < 3 && queue.push(d);
+  }
+
+  // Takes the first queued turn that doesn't reverse into the snake's own neck, then moves.
+  function tick() {
+    while (queue.length) {
+      let d = queue.shift();
+      if (d[0] + dir[0] || d[1] + dir[1]) {
+        dir = d;
+        break;
+      }
+    }
+    let head = [snake[0][0] + dir[0], snake[0][1] + dir[1]],
+      ate = same(head, food);
+    // The tail moves out of the way first, so chasing your own tail is allowed.
+    ate || snake.pop();
+    if (head.some((v) => v < 0 || v >= N) || snake.some((p) => same(p, head))) {
+      dead = 1;
+      s.textContent = score + " - game over";
+      [220, 165, 110].forEach((f, i) => setTimeout(beep, i * 120, f, 100));
+    } else {
+      snake.unshift(head);
+      if (ate) {
+        s.textContent = ++score;
+        beep(660, 40);
+        place();
+      }
+      // Speeds up as it grows: 150ms per step at the start, 60ms at the fastest.
+      setTimeout(tick, Math.max(60, 150 - score * 3));
+    }
+
+    ctx.fillStyle = "#222";
+    ctx.fillRect(0, 0, N, N);
+    ctx.fillStyle = "#f44";
+    ctx.fillRect(...food, 1, 1);
+    snake.forEach((p, i) => {
+      ctx.fillStyle = dead ? "#777" : i ? "#4c4" : "#8f8";
+      ctx.fillRect(...p, 1, 1);
+    });
+  }
+
+  onkeydown = (e) => {
+    audio.resume();
+    let d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+    d && (e.preventDefault(), turn(d));
+  };
+  onpointerdown = (e) => {
+    audio.resume();
+    sx = e.clientX;
+    sy = e.clientY;
+    dead && reset();
+  };
+  // Every 20px dragged counts as a swipe toward the main direction of movement.
+  onpointermove = (e) => {
+    let dx = e.clientX - sx,
+      dy = e.clientY - sy;
+    if (dx * dx + dy * dy > 400) {
+      turn(Math.abs(dx) > Math.abs(dy) ? [Math.sign(dx), 0] : [0, Math.sign(dy)]);
+      sx = e.clientX;
+      sy = e.clientY;
+    }
+  };
+  onpointerup = () => (sx = sy = undefined);
+</script>

@@ -1,0 +1,165 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Beats</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    padding: 8px;
+    background: #111;
+    color: #ccc;
+    font: 16px system-ui;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  p {
+    margin: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  input {
+    flex: 1;
+  }
+  button {
+    font: inherit;
+    border: 0;
+    border-radius: 4px;
+    padding: 8px 16px;
+    background: #333;
+    color: inherit;
+  }
+  #g {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    text-align: center;
+  }
+  #g button {
+    padding: 0;
+    background: #222;
+  }
+</style>
+<p>
+  <button id="pl">play</button><input id="r" type="range" min="60" max="180" /><span id="t"></span
+  ><button id="cl">clear</button>
+</p>
+<div id="g"><b>kick</b><b>snare</b><b>hat</b><b>tom</b></div>
+<script>
+  // A 16-step drum machine. The beat lives in the URL, like the notes app, so a beat can be
+  // shared by sharing the link. The format is "bpm.kick.snare.hat.tom", where each track is a
+  // 16-bit hex number and its highest bit is the first step: "100.80a0.808.aaaa.3"
+  let A = new AudioContext(),
+    noise = A.createBuffer(1, A.sampleRate, A.sampleRate),
+    bpm,
+    pat,
+    playing = 0,
+    step,
+    next,
+    cells = [],
+    // For each drum (kick, snare, hat, tom), the arguments of each hit() it plays together.
+    DRUMS = [
+      [[0.3, 1, 160, 40]],
+      [
+        [0.2, 0.4, 0, 1500],
+        [0.1, 0.5, 240, 160],
+      ],
+      [[0.05, 0.3, 0, 7000]],
+      [[0.25, 0.7, 220, 110]],
+    ];
+  noise.getChannelData(0).forEach((_, i, d) => (d[i] = Math.random() * 2 - 1));
+
+  // One synthesized sound at time t, fading out from `vol` over about `len` seconds. With a
+  // `from` it's a sine sliding from `from` Hz down to `to` Hz, the basis of kicks and toms;
+  // without one it's white noise above `to` Hz, for snares and hats.
+  function hit(t, len, vol, from, to) {
+    let src = from
+        ? new OscillatorNode(A, { frequency: from })
+        : new AudioBufferSourceNode(A, { buffer: noise }),
+      env = new GainNode(A, { gain: vol });
+    from && src.frequency.setTargetAtTime(to, t, len / 3);
+    env.gain.setTargetAtTime(0, t, len / 5);
+    (from ? src : src.connect(new BiquadFilterNode(A, { type: "highpass", frequency: to })))
+      .connect(env)
+      .connect(A.destination);
+    src.start(t);
+    src.stop(t + len);
+  }
+  let play = (d, t) => DRUMS[d].forEach((args) => hit(t, ...args));
+
+  for (let i = 0; i < 64; i++) {
+    let b = document.createElement("button"),
+      s = i >> 2,
+      d = i % 4;
+    b.onclick = () => {
+      A.resume();
+      pat[d] ^= 1 << (15 - s);
+      play(d, A.currentTime);
+      save();
+    };
+    cells.push(b);
+    g.append(b);
+  }
+
+  function load() {
+    let [b, ...p] = location.hash.slice(1).split(".");
+    bpm = +b || 100;
+    pat = p.length == 4 ? p.map((h) => parseInt(h, 16) || 0) : [0x80a0, 0x808, 0xaaaa, 3];
+    draw();
+  }
+
+  // Also updates the qrtoy URL, which needs a recent tap and fails silently without one.
+  function save() {
+    history.replaceState(0, "", "#" + [bpm, ...pat.map((n) => n.toString(16))].join("."));
+    try {
+      top != self && top.location.replace("https://qrtoy.github.io#" + location.href);
+    } catch {}
+    draw();
+  }
+
+  // Active steps are colored by drum, and every 4th row is lighter to mark the beats.
+  function draw(now) {
+    r.value = bpm;
+    t.textContent = bpm + " bpm";
+    pl.textContent = playing ? "stop" : "play";
+    cells.forEach((b, i) => {
+      let s = i >> 2;
+      b.style.background =
+        (pat[i % 4] >> (15 - s)) & 1 ? `hsl(${(i % 4) * 80},80%,60%)` : s % 4 ? "" : "#333";
+      b.style.outline = s === now ? "solid" : "";
+    });
+  }
+
+  // Look ahead 100ms and schedule drums on the audio clock, which keeps time better than timers.
+  setInterval(() => {
+    while (playing && next < A.currentTime + 0.1) {
+      let s = step;
+      pat.forEach((bits, d) => (bits >> (15 - s)) & 1 && play(d, next));
+      setTimeout(() => playing && draw(s), (next - A.currentTime) * 1000);
+      next += 15 / bpm; // a 16th note
+      step = (s + 1) % 16;
+    }
+  }, 25);
+
+  pl.onclick = () => {
+    A.resume();
+    playing ^= 1;
+    step = 0;
+    next = A.currentTime + 0.05;
+    draw();
+  };
+  cl.onclick = () => {
+    pat = [0, 0, 0, 0];
+    save();
+  };
+  r.oninput = () => {
+    bpm = +r.value;
+    draw();
+  };
+  r.onchange = save;
+  onhashchange = load;
+  load();
+</script>
