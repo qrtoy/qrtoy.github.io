@@ -1,0 +1,133 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Dice</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    padding: 12px;
+    background: #164;
+    color: #fff;
+    font:
+      20px system-ui,
+      sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  p {
+    margin: 0;
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+  }
+  button {
+    font: inherit;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #0003;
+    color: inherit;
+  }
+  .on {
+    background: #fff;
+    color: #164;
+  }
+  #g {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    align-content: center;
+  }
+  #g button {
+    width: 28vmin;
+    height: 28vmin;
+    border-radius: 16%;
+    background: #fff;
+    color: #111;
+    font-size: 14vmin;
+    box-shadow: 0 4px #0006;
+  }
+  #g .held {
+    background: #fd6;
+    transform: translateY(4px);
+    box-shadow: none;
+  }
+  #go {
+    font-size: 28px;
+    padding: 16px;
+    background: #fff;
+    color: #164;
+  }
+</style>
+<p id="types"></p>
+<p><button id="less">−</button><span id="n"></span><button id="more">+</button></p>
+<div id="g"></div>
+<p id="total"></p>
+<button id="go">roll</button>
+<script>
+  // Tap a die to hold it: held dice keep their value when the rest are rolled.
+  let sides = 6,
+    dice = [],
+    rolling = 0;
+
+  let face = (v) => (sides == 6 ? String.fromCodePoint(0x267f + v) : v); // ⚀ is U+2680
+
+  function draw() {
+    n.textContent = dice.length + " × d" + sides;
+    [...types.children].forEach((b) => (b.className = b.textContent == "d" + sides ? "on" : ""));
+    g.replaceChildren(
+      ...dice.map((d) => {
+        let b = document.createElement("button");
+        b.textContent = face(d.v);
+        b.className = d.held ? "held" : "";
+        b.onclick = () => rolling || ((d.held = !d.held), draw());
+        return b;
+      }),
+    );
+    total.textContent = rolling ? "…" : "total " + dice.reduce((sum, d) => sum + d.v, 0);
+  }
+
+  let random = () => ((Math.random() * sides) | 0) + 1;
+
+  // Flicker through random faces for a moment before settling, like a tumbling die.
+  function roll() {
+    if (rolling) return;
+    rolling = 10;
+    let tumble = () => {
+      dice.forEach((d) => d.held || (d.v = random()));
+      rolling--;
+      draw();
+      rolling && setTimeout(tumble, 50);
+    };
+    tumble();
+    navigator.vibrate?.(30);
+  }
+
+  function setCount(count) {
+    dice.length = Math.min(Math.max(count, 1), 12);
+    dice = Array.from(dice, (d) => d || { v: random(), held: 0 });
+    draw();
+  }
+
+  [4, 6, 8, 10, 12, 20].forEach((s) => {
+    let b = document.createElement("button");
+    b.textContent = "d" + s;
+    b.onclick = () => {
+      sides = s;
+      dice = dice.map(() => ({ v: random(), held: 0 }));
+      draw();
+    };
+    types.append(b);
+  });
+  less.onclick = () => setCount(dice.length - 1);
+  more.onclick = () => setCount(dice.length + 1);
+  go.onclick = roll;
+  setCount(2);
+</script>

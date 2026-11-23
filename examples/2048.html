@@ -1,0 +1,165 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>2048</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    background: #faf8ef;
+    color: #776e65;
+    font:
+      bold 24px system-ui,
+      sans-serif;
+    display: grid;
+    place-content: center;
+    gap: 12px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  p {
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+  }
+  button {
+    font: inherit;
+    font-size: 16px;
+    border: 0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    background: #8f7a66;
+    color: #fff;
+  }
+  #g {
+    position: relative;
+    width: min(92vw, 70vh);
+    aspect-ratio: 1;
+    background: #bbada0;
+    border-radius: 8px;
+  }
+  /* Empty cells and tiles share this; place() positions them. */
+  #g div {
+    position: absolute;
+    width: 22.5%;
+    height: 22.5%;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    background: #cdc1b4;
+    font-size: min(8vw, 6vh);
+    transition: 0.1s;
+  }
+  /* New and merged tiles grow in once the slide has finished. */
+  .t {
+    animation: pop 0.2s 0.1s backwards;
+  }
+  @keyframes pop {
+    from {
+      transform: scale(0);
+    }
+  }
+</style>
+<p><span id="s"></span><button onclick="reset()">new</button></p>
+<div id="g"></div>
+<script>
+  // The board is 16 cells, row by row, each holding a tile or 0. A tile is a div that keeps
+  // its value in .v and slides when place() moves it to another cell.
+  let board = [],
+    score,
+    sx,
+    sy;
+
+  // Cells are 22.5% wide with 2% gaps: 4 * 22.5 + 5 * 2 = 100.
+  function place(el, i) {
+    el.style.left = 2 + (i % 4) * 24.5 + "%";
+    el.style.top = 2 + (i >> 2) * 24.5 + "%";
+  }
+  for (let i = 0; i < 16; i++) place(g.appendChild(document.createElement("div")), i);
+
+  function tile(i, v) {
+    let t = document.createElement("div"),
+      n = Math.log2(v);
+    t.v = t.textContent = v;
+    t.className = "t";
+    // Tiles get warmer and darker as they double: 2 is pale yellow, 2048 is deep red.
+    t.style.background = `hsl(${50 - n * 5},${40 + n * 5}%,${92 - n * 5}%)`;
+    t.style.color = n > 2 ? "#fff" : "";
+    place(t, i);
+    g.append(t);
+    return t;
+  }
+
+  function add() {
+    let empty = [...board.keys()].filter((i) => !board[i]);
+    let i = empty[(Math.random() * empty.length) | 0];
+    board[i] = tile(i, Math.random() < 0.9 ? 2 : 4);
+  }
+
+  function reset() {
+    board.forEach((t) => t && t.remove());
+    board = Array(16).fill(0);
+    score = 0;
+    add();
+    add();
+    draw();
+  }
+
+  // d: 0 left, 1 right, 2 up, 3 down. Each row or column is read as a line of indices
+  // starting from the edge the tiles slide toward. Equal neighbors merge once per move:
+  // [2, 2, 2] becomes [4, 2], not [6]. Merging tiles both slide to the same cell, then a
+  // new tile for the sum grows over them and they're removed.
+  function move(d) {
+    let moved = 0,
+      next = Array(16).fill(0);
+    for (let i = 0; i < 4; i++) {
+      let line = [0, 1, 2, 3].map((j) =>
+          d > 1 ? (d > 2 ? 3 - j : j) * 4 + i : i * 4 + (d ? 3 - j : j),
+        ),
+        tiles = line.map((k) => board[k]).filter((t) => t);
+      for (let k of line) {
+        let t = tiles.shift();
+        if (!t) break;
+        place(t, k);
+        if (t.v == tiles[0]?.v) {
+          let u = tiles.shift();
+          place(u, k);
+          setTimeout(() => (t.remove(), u.remove()), 300);
+          next[k] = tile(k, t.v * 2);
+          score += t.v * 2;
+          moved = 1;
+        } else {
+          moved |= board[k] != t;
+          next[k] = t;
+        }
+      }
+    }
+    board = next;
+    if (moved) (add(), draw());
+  }
+
+  // Game over when the board is full and no tile has an equal neighbor to its right or below.
+  function draw() {
+    let over =
+      board.every((t) => t) &&
+      !board.some((t, i) => (i % 4 < 3 && t.v == board[i + 1].v) || t.v == board[i + 4]?.v);
+    s.textContent = score + (over ? " - game over" : "");
+  }
+
+  onkeydown = (e) => {
+    let d = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].indexOf(e.key);
+    d < 0 || (e.preventDefault(), move(d));
+  };
+  onpointerdown = (e) => {
+    sx = e.clientX;
+    sy = e.clientY;
+  };
+  onpointerup = (e) => {
+    let dx = e.clientX - sx,
+      dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) > 30)
+      move(Math.abs(dx) > Math.abs(dy) ? +(dx > 0) : dy < 0 ? 2 : 3);
+  };
+  reset();
+</script>

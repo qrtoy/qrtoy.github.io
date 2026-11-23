@@ -1,0 +1,141 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Minesweeper</title>
+<style>
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    background: #ddd;
+    font:
+      bold 20px system-ui,
+      sans-serif;
+    display: grid;
+    place-content: center;
+    gap: 10px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  p {
+    margin: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #s {
+    flex: 1;
+  }
+  button {
+    font: inherit;
+    padding: 0;
+    border: 0;
+    color: #000;
+  }
+  p button {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #bbb;
+  }
+  #g {
+    width: min(94vw, 76vh);
+    aspect-ratio: 1;
+    display: grid;
+    grid: repeat(9, 1fr) / repeat(9, 1fr);
+    gap: 2px;
+  }
+  #g button {
+    background: #aab;
+    border-radius: 3px;
+    font-size: min(6vw, 5vh);
+  }
+  #g .o {
+    background: #eee;
+  }
+</style>
+<p><span id="s"></span><button id="m"></button><button onclick="reset()">new</button></p>
+<div id="g"></div>
+<script>
+  // 9x9 cells, row by row. Mines are placed on the first tap, away from it, so it's never a loss.
+  let W = 9,
+    MINES = 10,
+    mine,
+    open,
+    flag,
+    started,
+    over,
+    flagMode = 0,
+    COLORS = ["", "#00c", "#080", "#d00", "#008", "#800", "#088", "#000", "#666"];
+
+  // Set here rather than in an onclick attribute: the minifier inlines variables it
+  // never sees reassigned, and it doesn't look inside attributes.
+  m.onclick = () => {
+    flagMode ^= 1;
+    draw();
+  };
+  for (let i = 0; i < W * W; i++) {
+    let b = document.createElement("button");
+    b.onclick = () => tap(i, flagMode);
+    b.oncontextmenu = (e) => (e.preventDefault(), tap(i, 1));
+    g.append(b);
+  }
+
+  // Indices of the up to 8 cells around i.
+  function around(i) {
+    let x = i % W,
+      y = (i / W) | 0,
+      out = [];
+    for (let dy = -1; dy < 2; dy++)
+      for (let dx = -1; dx < 2; dx++)
+        if ((dx || dy) && x + dx >= 0 && x + dx < W && y + dy >= 0 && y + dy < W)
+          out.push(i + dy * W + dx);
+    return out;
+  }
+
+  let count = (i) => around(i).filter((j) => mine[j]).length;
+
+  function reset() {
+    mine = [];
+    open = [];
+    flag = [];
+    started = over = 0;
+    draw();
+  }
+
+  function reveal(i) {
+    if (open[i] || flag[i]) return;
+    open[i] = 1;
+    if (mine[i]) over = "boom";
+    else if (!count(i)) around(i).forEach(reveal);
+  }
+
+  function tap(i, flagging) {
+    if (over || open[i]) return;
+    if (flagging) flag[i] = !flag[i];
+    else {
+      if (!started) {
+        started = 1;
+        let safe = [i, ...around(i)];
+        for (let n = 0; n < MINES;) {
+          let j = (Math.random() * W * W) | 0;
+          if (!mine[j] && !safe.includes(j)) ((mine[j] = 1), n++);
+        }
+      }
+      reveal(i);
+      if (!over && open.filter((v) => v).length == W * W - MINES) over = "you win!";
+    }
+    draw();
+  }
+
+  function draw() {
+    m.textContent = flagMode ? "🚩" : "⛏️";
+    s.textContent = over || "💣 " + (MINES - flag.filter((v) => v).length);
+    [...g.children].forEach((b, i) => {
+      let show = open[i] || (over && mine[i]),
+        n = show && !mine[i] && count(i);
+      b.className = show ? "o" : "";
+      b.textContent = show ? (mine[i] ? "💣" : n || "") : flag[i] ? "🚩" : "";
+      b.style.color = COLORS[+n];
+    });
+  }
+  reset();
+</script>
